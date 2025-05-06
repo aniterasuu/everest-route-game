@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Маршрут на Эверест</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #000;
+    }
+    #canvas {
+      display: block;
+      background-image: url('Everest-3D-Map-Type-EN.jpg');
+      background-size: cover;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+    }
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.6);
+      padding: 12px;
+      border-radius: 10px;
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background: #00bcd4;
+      color: white;
+    }
+    button:hover {
+      background: #008ba3;
+    }
+    #result {
+      font-size: 14px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="controls">
+    <button onclick="checkRoute()">Проверить маршрут</button>
+    <button onclick="showReference()">Посмотреть эталон</button>
+    <button onclick="resetCanvas()">Начать заново</button>
+    <div id="result">Рисуйте маршрут от Base Camp до вершины 🧗</div>
+  </div>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const originalWidth = 5000;
+    const originalHeight = 2813;
+    const scaleX = canvas.width / originalWidth;
+    const scaleY = canvas.height / originalHeight;
+
+    let drawing = false;
+    let userPath = [];
+    let referenceVisible = false;
+
+    const referencePath = [[2479, 2394], [2479, 2391], [2479, 2388], [2476, 2388], [2476, 2385], [2473, 2382], [2470, 2382], [2466, 2378], [2463, 2375], [2463, 2372], [2460, 2372], [2457, 2372], [2454, 2372], [2454, 2369], [2450, 2369], [2447, 2369], [2444, 2366], [2441, 2366], [2438, 2366], [2434, 2366], [2434, 2359], [2431, 2359], [2431, 2356], [2428, 2356], [2428, 2353], [2425, 2353], [2422, 2353], [2422, 2350], [2418, 2350], [2415, 2350], [2412, 2346], [2412, 2343], [2409, 2343], [2409, 2340], [2406, 2340], [2402, 2340], [2402, 2337], [2399, 2334], [2396, 2330], [2396, 2327], [2393, 2327], [2393, 2324], [2390, 2324], [2390, 2321], [2390, 2318], [2386, 2318], [2383, 2318], [2383, 2314], [2380, 2314], [2380, 2311], [2380, 2308], [2377, 2308], [2374, 2302]];
+
+    function getScaledPath(path) {
+      return path.map(([x, y]) => [x * scaleX, y * scaleY]);
+    }
+
+    function drawSmoothLine(path, color) {
+      if (path.length < 2) return;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 4;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(path[0][0], path[0][1]);
+      for (let i = 1; i < path.length - 1; i++) {
+        const midX = (path[i][0] + path[i+1][0]) / 2;
+        const midY = (path[i][1] + path[i+1][1]) / 2;
+        ctx.quadraticCurveTo(path[i][0], path[i][1], midX, midY);
+      }
+      ctx.stroke();
+    }
+
+    function draw() {
+      const bg = new Image();
+      bg.src = 'Everest-3D-Map-Type-EN.jpg';
+      bg.onload = () => {
+        ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+        drawSmoothLine(userPath, '#00bfff');
+        if (referenceVisible) {
+          drawSmoothLine(getScaledPath(referencePath), '#ffffff88');
+        }
+      };
+    }
+
+    canvas.addEventListener("mousedown", () => {
+      drawing = true;
+      userPath = [];
+      ctx.beginPath();
+    });
+
+    canvas.addEventListener("mouseup", () => {
+      drawing = false;
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+      if (!drawing) return;
+      userPath.push([e.offsetX, e.offsetY]);
+      draw();
+    });
+
+    function distance(p1, p2) {
+      return Math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2);
+    }
+
+    function checkRoute() {
+      if (userPath.length < 10) {
+        document.getElementById("result").textContent = "Слишком короткий маршрут!";
+        return;
+      }
+
+      const scaledRef = getScaledPath(referencePath);
+      let matchCount = 0;
+      const threshold = 30;
+
+      for (const ref of scaledRef) {
+        const close = userPath.some(pt => distance(pt, ref) < threshold);
+        if (close) {
+          matchCount++;
+        } else {
+          ctx.beginPath();
+          ctx.arc(ref[0], ref[1], 6, 0, 2 * Math.PI);
+          ctx.fillStyle = "red";
+          ctx.fill();
+        }
+      }
+
+      const percent = Math.round((matchCount / scaledRef.length) * 100);
+      document.getElementById("result").textContent =
+        "✔️ Совпадение маршрута: " + percent + "%";
+    }
+
+    function resetCanvas() {
+      userPath = [];
+      referenceVisible = false;
+      draw();
+      document.getElementById("result").textContent = "Маршрут сброшен. Рисуйте снова!";
+    }
+
+    function showReference() {
+      referenceVisible = true;
+      draw();
+    }
+
+    draw();
+  </script>
+</body>
+</html>
