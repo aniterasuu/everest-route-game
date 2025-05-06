@@ -997,21 +997,27 @@
       };
     }
 
-    canvas.addEventListener("mousedown", () => {
-      drawing = true;
-      userPath = [];
-      ctx.beginPath();
-    });
+    canvas.addEventListener("mousedown", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  drawing = true;
+  userPath.push([x, y]);
+  redraw();
+});
 
     canvas.addEventListener("mouseup", () => {
       drawing = false;
     });
 
     canvas.addEventListener("mousemove", (e) => {
-      if (!drawing) return;
-      userPath.push([e.offsetX, e.offsetY]);
-      draw();
-    });
+  if (!drawing) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  userPath.push([x, y]);
+  redraw();
+});
 
     function distance(p1, p2) {
       return Math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2);
