@@ -72,6 +72,7 @@
     let drawing = false;
     let userPath = [];
     let referenceVisible = false;
+    let showColoredErrors = false;
 
     const referencePath = [[2479, 2394],
   [2479, 2391],
@@ -969,28 +970,39 @@
       return path.map(([x, y]) => [x * scaleX, y * scaleY]);
     }
 
-    function drawSmoothLine(path, color) {
-      if (path.length < 2) return;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 4;
-      ctx.lineJoin = "round";
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(path[0][0], path[0][1]);
-      for (let i = 1; i < path.length - 1; i++) {
-        const midX = (path[i][0] + path[i+1][0]) / 2;
-        const midY = (path[i][1] + path[i+1][1]) / 2;
-        ctx.quadraticCurveTo(path[i][0], path[i][1], midX, midY);
-      }
-      ctx.stroke();
+    function drawSmoothLine(path, defaultColor = '#00bfff') {
+  if (path.length < 2) return;
+
+  const scaledRef = getScaledPath(referencePath);
+  const threshold = 30;
+
+  ctx.lineWidth = 4;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+
+  for (let i = 1; i < path.length; i++) {
+    const [x1, y1] = path[i - 1];
+    const [x2, y2] = path[i];
+
+    let color = defaultColor;
+    if (showColoredErrors) {
+      const isClose = scaledRef.some(([rx, ry]) => distance([x2, y2], [rx, ry]) < threshold);
+      color = isClose ? '#00bfff' : '#ff3b3b';
     }
 
+    ctx.strokeStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+}
     function draw() {
       const bg = new Image();
       bg.src = 'Everest-3D-Map-Type-EN.jpg';
       bg.onload = () => {
         ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
-        drawSmoothLine(userPath, '#00bfff');
+        drawSmoothLine(userPath);
         if (referenceVisible) {
           drawSmoothLine(getScaledPath(referencePath), '#ffffff88');
         }
@@ -1024,35 +1036,32 @@
     }
 
     function checkRoute() {
-      if (userPath.length < 10) {
-        document.getElementById("result").textContent = "Слишком короткий маршрут!";
-        return;
-      }
+  if (userPath.length < 10) {
+    document.getElementById("result").textContent = "Слишком короткий маршрут!";
+    return;
+  }
 
-      const scaledRef = getScaledPath(referencePath);
-      let matchCount = 0;
-      const threshold = 30;
+  const scaledRef = getScaledPath(referencePath);
+  let matchCount = 0;
+  const threshold = 30;
 
-      for (const ref of scaledRef) {
-        const close = userPath.some(pt => distance(pt, ref) < threshold);
-        if (close) {
-          matchCount++;
-        } else {
-          ctx.beginPath();
-          ctx.arc(ref[0], ref[1], 6, 0, 2 * Math.PI);
-          ctx.fillStyle = "red";
-          ctx.fill();
-        }
-      }
+  for (const ref of scaledRef) {
+    const close = userPath.some(pt => distance(pt, ref) < threshold);
+    if (close) matchCount++;
+  }
 
-      const percent = Math.round((matchCount / scaledRef.length) * 100);
-      document.getElementById("result").textContent =
-        "✔️ Совпадение маршрута: " + percent + "%";
-    }
+  const percent = Math.round((matchCount / scaledRef.length) * 100);
+  document.getElementById("result").textContent =
+    "✔️ Совпадение маршрута: " + percent + "%";
+
+  showColoredErrors = true;
+  draw();
+}
 
     function resetCanvas() {
       userPath = [];
       referenceVisible = false;
+      showColoredErrors = false;
       draw();
       document.getElementById("result").textContent = "Маршрут сброшен. Рисуйте снова!";
     }
