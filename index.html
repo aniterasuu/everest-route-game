@@ -56,7 +56,7 @@
     <button onclick="checkRoute()">Проверить маршрут</button>
     <button onclick="showReference()">Посмотреть эталон</button>
     <button onclick="resetCanvas()">Начать заново</button>
-    <div id="result">Рисуйте маршрут от Base Camp до вершины 🧗</div>
+    <div id="result">Рисуйте маршрут от базового лагеря до вершины </div>
   </div>
   <script>
     const canvas = document.getElementById("canvas");
@@ -1003,7 +1003,7 @@
   const y = e.clientY - rect.top;
   drawing = true;
   userPath.push([x, y]);
-  redraw();
+  draw();
 });
 
     canvas.addEventListener("mouseup", () => {
@@ -1016,7 +1016,7 @@
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
   userPath.push([x, y]);
-  redraw();
+  draw();
 });
 
     function distance(p1, p2) {
