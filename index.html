@@ -51,6 +51,24 @@
   </style>
 </head>
 <body>
+  <div id="success-message" style="
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.85);
+  padding: 24px 36px;
+  border-radius: 12px;
+  text-align: center;
+  z-index: 1000;
+  font-family: sans-serif;
+">
+  <div style="color: white; font-size: 20px; margin-bottom: 16px;">
+    Вы угадали маршрут!
+  </div>
+  <button id="continueButton">Продолжить</button>
+</div>
   <canvas id="canvas"></canvas>
   <div id="controls">
     <button onclick="checkRoute()">Проверить маршрут</button>
@@ -1054,6 +1072,10 @@
   document.getElementById("result").textContent =
     "✔️ Совпадение маршрута: " + percent + "%";
 
+  if (percent >= 90) {
+    document.getElementById("success-message").style.display = "block";
+  }
+
   showColoredErrors = true;
   draw();
 }
@@ -1072,6 +1094,9 @@
     }
 
     draw();
+    document.getElementById("continueButton").onclick = function () {
+  window.location.href = "https://маниявысоты.рф/ascension/";
+};
   </script>
 </body>
 </html>
